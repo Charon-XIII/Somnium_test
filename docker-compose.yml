@@ -1,0 +1,44 @@
+version: '3.8'
+volumes:
+    pgdata:
+        driver: local
+services:
+    nginx:
+        restart: always
+        image: nginx:latest
+        expose:
+          - 443
+        ports:
+          - "443:443"
+          - "80:80"
+          - "587:587"
+        volumes:
+            - ./Somnium/static:/srv/www/Somnium/static
+            - ./Somnium/media:/srv/www/Somnium/media
+            - ./docker/nginx:/etc/nginx/conf.d
+        depends_on:
+            - python
+    python:
+        restart: always
+        build:
+            context: .
+            dockerfile: docker/python/Dockerfile
+        volumes:
+            - ./Somnium:/srv/www/Somnium
+            - ./docker/nginx/certs/:/etc/certs
+        expose:
+          - 443
+        command: "gunicorn -c gunicorn.py --certfile=/etc/certs/localhost.crt --keyfile=/etc/certs/localhost.key Somnium.wsgi:application --bind 0.0.0.0:443"        
+    redis:
+        image: redis:alpine
+    celery:
+        restart: always
+        build:
+            context: .
+            dockerfile: docker/python/Dockerfile
+        command: celery -A Somnium worker -l info
+        volumes:
+            - ./Somnium:/Somnium
+        depends_on:
+            - redis
+            - python

@@ -1,0 +1,9 @@
+djangorestframework
+markdown
+django-filter
+celery
+redis
+gunicorn
+gevent
+pytils
+django_extensions
